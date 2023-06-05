@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="ISO-8859-1">
+<title>Juego pelota</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+
+    <style>
+        #canvas{
+            
+            background-image: url(campo.jpg);
+        }
+    </style>
+
+</head>
+<body class=" h-screen flex justify-center items-center bg-[conic-gradient(at_left,_var(--tw-gradient-stops))] from-gray-900 to-gray-600 bg-gradient-to-r">
+
+    <div id="info">&nbsp;</div>
+    
+    <canvas id="canvas" class="m-auto w-[50%] h-[40rem] grid place-items-center  border-8 border-sky-500" width="800" height="600" ></canvas>
+    <img src="pelota.png" width="10" height="10" style="visibility: hidden"/>
+
+    <script src="js/jquery.js"></script>
+    <script>
+    	let nivel = 1;
+    	let contMetas = 0;
+    	let velocidad = 1;
+        let canvas = document.getElementById("canvas");
+        let ctx = canvas.getContext("2d");
+        let imagen_pelota = new Image();
+        imagen_pelota.src = "pelota.png";
+        
+        //coordenadas de la pelota
+        let x = 0;
+        let y = 300;
+        
+        //zona de meta
+        let metaY = Math.floor(Math.random() * 400) + 20;
+        let metaAlto = Math.floor(Math.random() * 120) + 30;
+
+        
+        //obstaculos
+        let obstaculo1Alto = Math.floor(Math.random() * 160) + 30;
+     	let obstaculo2Alto = Math.floor(Math.random() * 160) + 30;
+      	let obstaculo3Alto = Math.floor(Math.random() * 160) + 30;
+      	let obstaculo1Y = Math.floor(Math.random() * 450) + 30;
+      	let obstaculo2Y = Math.floor(Math.random() * 450) + 30;
+      	let obstaculo3Y = Math.floor(Math.random() * 450) + 30;
+
+        
+        //constantes para la direccion
+        const ARRIBA = 1;        
+        const IZQUIERDA = 2;
+        const ABAJO = 3;
+        const DERECHA = 4;
+        
+      //constantes para las teclas
+        const TECLA_W = 119;
+        const TECLA_A = 97;
+        const TECLA_S = 115;
+        const TECLA_D = 100;
+
+       /* //constantes para las teclas ALTERNATIVO
+        const TECLA_W = 87;
+        const TECLA_A = 65;
+        const TECLA_S = 83;
+        const TECLA_D = 68;*/
+
+        //direccion actual de la pelota
+        let direccion = DERECHA;
+
+        //funcion que crea un objeto que representa una zona rectangular en pantalla
+        function crearZona(xZona, yZona, ancho, alto, color){
+            let zona = {
+                x : xZona,
+                y : yZona,
+                ancho : ancho,
+                alto: alto,
+                color: color,
+                pintar: function(ctx){
+                    ctx.fillStyle = this.color;
+                    ctx.fillRect(this.x, this.y, this.ancho, this.alto);
+                },
+                detectarColision: function(xPelota, yPelota){
+                    if( xPelota >= this.x && xPelota <= ( this.x + this.ancho ) && 
+                        yPelota >= this.y && yPelota <= ( this.y + this.alto) ){
+                        return true;
+                    }else{
+                        return false;
+                    }
+                }
+            };//end zona
+            return zona;
+        }//end crearZona
+
+        function pintar(){
+            let obstaculo1 = crearZona(500, obstaculo1Y, 150, obstaculo1Alto,"red");
+            let obstaculo2 = crearZona(200, obstaculo2Y, 100, obstaculo2Alto, "red");
+            let obstaculo3 = crearZona(350, obstaculo3Y, 50, obstaculo3Alto, "red");
+            let meta = crearZona(690, metaY, 100, metaAlto, "white");
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.drawImage(imagen_pelota,x,y,50,50);
+            meta.pintar(ctx);
+            obstaculo1.pintar(ctx);
+            obstaculo2.pintar(ctx);
+            obstaculo3.pintar(ctx);
+            switch(direccion){
+                case DERECHA:
+                	 x = x + velocidad;
+                    break;
+                case ABAJO:
+                	y = y + velocidad;
+                    break;
+                case ARRIBA:
+                	y = y - velocidad;
+                    break;
+                case IZQUIERDA:
+                	 x = x - velocidad;
+                    break;
+            }//end switch
+
+            //comprobar colisiones
+            if(obstaculo1.detectarColision(x,y) || obstaculo2.detectarColision(x, y) ||
+                    obstaculo3.detectarColision(x, y)){
+                alert("Juego finalizado. Has llegado a la meta " + contMetas + " veces.");
+                clearInterval(timer);
+            }else if(meta.detectarColision(x,y)){
+            	x = 0;
+                y = 300;
+                nivel++;
+                velocidad = velocidad + 0.5;
+                contMetas++;
+                metaY = Math.floor(Math.random() * 400) + 20;
+                metaAlto = Math.floor(Math.random() * 120) + 30;
+                obstaculo1Alto = Math.floor(Math.random() * 160) + 30;
+                obstaculo2Alto = Math.floor(Math.random() * 160) + 30;
+                obstaculo3Alto = Math.floor(Math.random() * 160) + 30;
+                obstaculo1Y = Math.floor(Math.random() * 450) + 30;
+                obstaculo2Y = Math.floor(Math.random() * 450) + 30;
+                obstaculo3Y = Math.floor(Math.random() * 450) + 30;
+                direccion = DERECHA;
+                alert("ENHORABUENA HAS ALCANZADO LA META!. Pulse aceptar para pasar al nivel " + nivel );
+            }else if( x > canvas.width || y > canvas.height || x < -70 || y <-70){
+                alert("has perdido, saliste de la pantalla. Has llegado a la meta " + contMetas + " veces.");
+                clearInterval(timer);
+            }
+
+        }//end pintar
+
+        $(document).keypress(function(e){
+            /*$("#info").html("tecla pulsado: " + e.which);*/
+            switch(e.which){
+                case TECLA_W:
+                    direccion = ARRIBA;
+                    break;
+                case TECLA_S:
+                    direccion = ABAJO;
+                    break;
+                case TECLA_D:
+                    direccion = DERECHA;
+                    break;
+                case TECLA_A:
+                    direccion = IZQUIERDA;
+                    break;
+            }//end switch
+        });//end keypress
+
+        alert("lleva la pelota a la zona de meta blanca evitando los obstaculos rojos \n"+
+            " tecla W -> Arriba \n" + 
+            " tecla A -> Izquierda \n" +
+            " tecla S -> Abajo \n" +
+            " tecla D -> Derecha \n");
+        let timer = setInterval(pintar,5);
+    </script>
+
+</body>
+</html>
